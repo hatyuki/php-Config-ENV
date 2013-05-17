@@ -1,0 +1,119 @@
+# NAME
+Config_ENV - Various config determined by $_SERVER
+
+
+# SYNOPSIS
+```php
+<?php
+require_once 'Config/ENV.php';
+class MyConfig extends Config_ENV { }
+
+MyConfig::envname('APP_ENV');  # use $_SERVER['APP_ENV'] to determine config
+
+MyConfig::common( array('name' => 'foobar') );
+
+MyConfig::config('development', array('dsn' => 'sqlite:/tmp/development.db'));
+MyConfig::config('test',        array('dsn' => 'sqlite:/tmp/test.db'));
+MyConfig::config('production',  array('dsn' => 'sqlite:/tmp/production.db'));
+
+MyConfig::config('production_bot', MyConfig::merge(
+    MyConfig::parent('production'),
+    array('bot' => 1)
+) );
+
+# Use it
+$_SERVER['APP_ENV'] = 'production_bot';
+MyConfig::param('dsn');  #=> sqlite:/tmp/production.db
+MyConfig::current( ); #=> array('name' => '...', dsn => '...', 'bot' => 1);
+```
+
+
+# DESCRIPTION
+Config_ENV is for switching various configurations by environment variable.
+
+
+# CONFIG DEFINITION
+use this library in your config class:
+
+```php
+<?php
+require_once 'Config/ENV.php';
+class MyConfig extends Config_ENV { }
+
+MyConfig::envname('FOO_ENV');
+
+MyConfig::common( array(
+    'name' => 'foobar',
+) );
+
+MyConfig::config('development' => array( ));
+MyConfig::config('production'  => array( ));
+```
+
+## Config_ENV::common($hash)
+Define common config. This $hash is merged with specific environment config.
+
+## Config_ENV::config($env, $hash)
+Define environment config.
+This $hash is just enabled in $env environment.
+
+## Config_ENV::parent($env)
+Expand $env configuration to inherit it.
+
+## Config_ENV::load($filename)
+`require $filename` and expand it with lazy-evaluation.
+This can be used following:
+
+```php
+<?php
+# MyConfig.php
+MyConfig::common( MyConfig::merge(
+    'API_KEY'    => 'Set in config.php',
+    'API_SECRET' => 'Set in config.php',
+    MyConfig::load('config.php),
+) );
+?>
+
+<?php
+# config.php
+return array(
+  'API_KEY'    => 'Config_ENV',
+  'API_SECRET' => '2dbb7a887f1462a96b25be5d3c9f44f76264fbcb',
+);
+```
+
+## Config_ENV::merge($array, $array, ...)
+Merge argument $array with lazy-evaluation.
+
+
+# METHODS
+## Config_ENV::param($name)
+Returns config variable named $name.
+
+## Config_ENV::current( )
+Returns current configuration as hash.
+
+## Config_ENV::env( )
+Returns current environment name.
+
+## $guard = Config_ENV::local($key, $value)
+This is for scope limited config. You can use this when you use other values in temporary. Returns guard object.
+
+```php
+<?php
+echo MyConfig::param('name'), "\n";  # => original value
+
+$guard = MyConfig::local('name', 'localized');
+echo MyConfig::param('name'), "\n"; # => 'localized'
+
+$guard = null;
+echo MyConfig::param('name'), "\n";  # => original value
+```
+
+
+# AUTHOR
+hatyuki <hatyuki29@gmail.com>
+
+
+# SEE ALSO
+[Config::ENV](https://github.com/cho45/Config-ENV)
